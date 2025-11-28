@@ -1,0 +1,13 @@
+train: ../train/images
+val: ../valid/images
+test: ../test/images
+
+nc: 1
+names: ['pothole']
+
+roboflow:
+  workspace: vitvellore-rtjtf
+  project: pothole-detection-new-syj2l
+  version: 1
+  license: CC BY 4.0
+  url: https://universe.roboflow.com/vitvellore-rtjtf/pothole-detection-new-syj2l/dataset/1
