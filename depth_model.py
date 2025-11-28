@@ -7,13 +7,16 @@ import cv2
 import torch
 import numpy as np
 
+
+# ------------------------------
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print("Using device:", device)
+
 # ------------------------------
 # Load MiDaS model from torch.hub
 #    *MiDaS:
 #    *need internet connection first time to download weights, but cached afterwards for reuse.
 # ------------------------------
-
-
 #Choose a model type: "DPT_Large", "DPT_Hybrid", "MiDaS_small"
 #Chose "DPT_Hybrid" for a good balance of speed and accuracy
 #________________________________________________________
@@ -25,15 +28,29 @@ import numpy as np
 # - smoother surfaces (useful for estimating road)
 # - sharp enough edges (useful for pothole boundary)
 # - less noise (important for depth difference calculations)
-# - This is essential because noise in depth = incorrect pothole measurements.
+# - essential because noise in depth = incorrect pothole measurements.
 #
+# Architecture:
+# - A ResNet-50 CNN backbone (good at edges + local details)
+# - A Transformer decoder (good at global structure + depth reasoning)
+#
+
+
+
 
 MODEL_TYPE = "DPT_Hybrid"
 
-midas = torch.hub.load("intel-isl/MiDaS", MODEL_TYPE)
-midas.eval()  # set to evaluation mode (no training)
 
-# Load the appropriate transforms for the model
+#Checks if the MiDaS model is already stored in your PyTorch cache, otherwise download model weight sand architecture.
+midas = torch.hub.load("intel-isl/MiDaS", MODEL_TYPE) #load the model
+
+#Move model to GPU if possible
+midas.to(device)
+
+
+midas.eval()  # set to evaluation mode - no training
+
+#Load the transforms for the model for preprocessing
 midas_transforms = torch.hub.load("intel-isl/MiDaS", "transforms")
 
 if MODEL_TYPE in ["DPT_Large", "DPT_Hybrid"]:
@@ -44,14 +61,14 @@ else:
 
 def predict_depth(frame):
     """
-    Compute a depth map for one BGR frame using MiDaS.
+    Compute a depth map for one BGR frame using MiDaS
 
     Input:
-        frame: np.ndarray (H, W, 3), BGR from OpenCV.
+        frame: np.ndarray (H, W, 3), BGR from OpenCV
 
     Output:
         depth_map: np.ndarray (H, W), float32
-                   Larger values ≈ farther from camera.
+                   Larger values ≈ farther from camera
     """
 
     # Convert BGR (OpenCV format) to RGB (what MiDaS expects)
@@ -59,7 +76,12 @@ def predict_depth(frame):
 
     # Apply the model's transform (resize, normalize, etc.)
     input_batch = transform(img_rgb).unsqueeze(0)  # add batch dimension
+    
+    # Move input to GPU
+    input_batch = input_batch.to(device) #GPU if available
 
+
+    #faster inference  by disable gradient calculation
     with torch.no_grad():
         # Forward pass through MiDaS
         prediction = midas(input_batch)
@@ -70,10 +92,11 @@ def predict_depth(frame):
             size=img_rgb.shape[:2],          # (H, W)
             mode="bicubic",
             align_corners=False,
+
         ).squeeze(1)  # remove channel dimension
 
-    # Convert to numpy float32 array
+    # Move result to CPU and convert to numpy float
     depth_map = prediction_resized[0].cpu().numpy().astype(np.float32)
-
-    # At this point, depth_map[y, x] is a relative depth value
+    
+    #depth_map[y, x] is a relative depth value 
     return depth_map
