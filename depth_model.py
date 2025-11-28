@@ -8,15 +8,15 @@ import torch
 import numpy as np
 
 
-# ------------------------------
+
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print("Using device:", device)
 
-# ------------------------------
+
 # Load MiDaS model from torch.hub
 #    *MiDaS:
 #    *need internet connection first time to download weights, but cached afterwards for reuse.
-# ------------------------------
+#
 #Choose a model type: "DPT_Large", "DPT_Hybrid", "MiDaS_small"
 #Chose "DPT_Hybrid" for a good balance of speed and accuracy
 #________________________________________________________
