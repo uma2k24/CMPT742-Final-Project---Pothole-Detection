@@ -41,7 +41,7 @@ print("Using device:", device)
 MODEL_TYPE = "DPT_Hybrid"
 
 
-#Checks if the MiDaS model is already stored in your PyTorch cache, otherwise download model weight sand architecture.
+#Checks if the MiDaS model is already stored in PyTorch cache, otherwise download model weight sand architecture.
 midas = torch.hub.load("intel-isl/MiDaS", MODEL_TYPE) #load the model
 
 #Move model to GPU if possible
