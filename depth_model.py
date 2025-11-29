@@ -68,10 +68,12 @@ def predict_depth(frame):
 
     Output:
         depth_map: np.ndarray (H, W), float32
-                   Larger values ≈ farther from camera
+                MiDaS will output relative depth -inverse depth values
+                   Larger values = closer to camera
+                   Smaller values = farther from camera
     """
 
-    # Convert BGR (OpenCV format) to RGB (what MiDaS expects)
+    # Convert BGR to RGB (what MiDaS expects)
     img_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
     # Apply the model's transform (resize, normalize, etc.)
