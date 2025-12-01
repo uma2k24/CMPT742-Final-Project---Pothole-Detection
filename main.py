@@ -19,13 +19,11 @@ from visualize import draw_results   # make sure visualize.py is in the same fol
 # --------- Configuration ---------
 
 # Input video
-video_path = "Media/Potholes.mp4"
+video_path = "CMPT742-Final-Project---Pothole-Detection/Media/Potholes.mp4"
 cap = cv2.VideoCapture(video_path)
 
 # YOLO model with custom weights
-model = YOLO(
-    r"c:/Users/amand/Desktop/CMPT 742/Project Potholes/CMPT742-Final-Project---Pothole-Detection/runs/detect/train14/weights/best.pt"
-)
+model = YOLO("Weights/best.pt")
 
 # Single class for this project
 classNames = ["Pothole"]
@@ -108,12 +106,13 @@ while True:
                 mean_rel = depth_metrics["mean_rel"]
                 road_depth = depth_metrics["road_depth"]
 
-                # Debug print if you want to monitor relative values
-                print(f"max_rel = {max_rel:.6f}, mean_rel = {mean_rel:.6f}")
+                # Build label text
+                label = f"{classNames[cls]} {conf:.2f}"
 
-                # NEW: metric depths (cm) from depth_utils.py
-                max_depth_cm = depth_metrics.get("max_depth_cm", 0.0)
-                mean_depth_cm = depth_metrics.get("mean_depth_cm", 0.0)
+                # Only append depth if we successfully estimated road_depth
+                if road_depth is not None:
+                    # Note: units are relative MiDaS units, not meters
+                    label += f" d={max_rel:.2f}"
 
                 # NEW: compute depth score in [0, 1]
                 depth_score = depth_score_from_cm(max_depth_cm)
@@ -160,6 +159,7 @@ while True:
 
     cv2.imshow("Pothole Detection + Depth", vis_img)
 
+    cv2.imshow("Image", img)
     if cv2.waitKey(1) & 0xFF == ord("q"):
         break
 
