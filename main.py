@@ -11,15 +11,16 @@ from ultralytics import YOLO
 
 from depth_model import predict_depth
 from depth_utils import estimate_pothole_depth_relative
+from visualize import draw_results
 
 # --------- Configuration ---------
 
 # Input video
-video_path = "Media/Potholes.mp4"
+video_path = "CMPT742-Final-Project---Pothole-Detection/Media/Potholes.mp4"
 cap = cv2.VideoCapture(video_path)
 
 # YOLO model with custom weights
-model = YOLO("Weights/best.pt")
+model = YOLO("CMPT742-Final-Project---Pothole-Detection/runs/detect/train/weights/best.pt")
 
 # Single class for this project
 classNames = ["Pothole"]
@@ -84,7 +85,8 @@ while True:
                     scale=1,
                     thickness=1,
                 )
-
+    
+    # draw_results(img, results, depth_map, show_depth=True)
     cv2.imshow("Image", img)
     if cv2.waitKey(1) & 0xFF == ord("q"):
         break
