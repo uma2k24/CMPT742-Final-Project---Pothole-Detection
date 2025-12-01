@@ -1,4 +1,3 @@
-
 # This program compute pothole depth
 # from a depth map + a YOLO bounding box
 #
@@ -24,6 +23,12 @@
 
 
 import numpy as np
+
+#Metric depth calibration constants
+# These constants convert relative MiDaS depth into approximate real-world centimeters.
+# You MUST tune alpha_cm_per_unit using real calibration images.
+alpha_cm_per_unit = 0.005   # placeholder; adjust after calibration/ real measurements of potholes
+beta_cm_offset = 0.0        # usually 0 is fine
 
 
 
@@ -107,6 +112,13 @@ def estimate_road_reference_depth(road_context):
     return road_depth
 
 
+#Convert relative MiDaS difference -> centimeters 
+def rel_to_cm(rel_value):
+    if rel_value <= 0:
+        return 0.0
+    return float(alpha_cm_per_unit * rel_value + beta_cm_offset)
+
+
 
 
 #Calulate pothole depth relative to road
@@ -140,6 +152,8 @@ def estimate_pothole_depth_relative(depth_map, bbox, road_margin=15):
         return {
             "max_rel": 0.0,
             "mean_rel": 0.0,
+            "max_depth_cm": 0.0,   # ADDED
+            "mean_depth_cm": 0.0,  # ADDED
             "road_depth": None,
             "pothole_depth_values": None
         }
@@ -151,7 +165,7 @@ def estimate_pothole_depth_relative(depth_map, bbox, road_margin=15):
     # Flat road (closer) -> larger MiDaS val
     # Pothole bottom (farther) -> smaller MiDaS val
     #
-    # Depression (pothole) is defined as how much deeper than road surface:
+    # Depression (pothhole) is defined as how much deeper than road surface:
     #   diff = road_depth - pothole_depth
     # If diff > 0, current pixel is deeper than the surrounding road
     diff = road_depth - pothole_region
@@ -164,6 +178,8 @@ def estimate_pothole_depth_relative(depth_map, bbox, road_margin=15):
         return {
             "max_rel": 0.0,
             "mean_rel": 0.0,
+            "max_depth_cm": 0.0,   # ADDED
+            "mean_depth_cm": 0.0,  # ADDED
             "road_depth": road_depth,
             "pothole_depth_values": pothole_region
         }
@@ -171,9 +187,18 @@ def estimate_pothole_depth_relative(depth_map, bbox, road_margin=15):
     max_rel = float(np.max(depression))
     mean_rel = float(np.mean(depression))
 
+    # --- ADDED: convert relative to approximate centimeters ---
+    max_depth_cm = rel_to_cm(max_rel)
+    mean_depth_cm = rel_to_cm(mean_rel)
+
     return {
         "max_rel": max_rel,                 # deepest single pixel (relative depth)
         "mean_rel": mean_rel,               # average depth inside pothole
+
+        # metric outputs (ADDED)
+        "max_depth_cm": max_depth_cm,
+        "mean_depth_cm": mean_depth_cm,
+
         "road_depth": road_depth,
         "pothole_depth_values": pothole_region
     }

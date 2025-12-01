@@ -77,9 +77,8 @@ def predict_depth(frame):
     img_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
     # Apply the model's transform (resize, normalize, etc.)
-    ## dpt_transform already returns a batched tensor of shape (1, 3, H, W), no need to unsqueeze (0)
-    input_batch = transform(img_rgb) # shape is (1, 3, H, W)
-
+    # dpt_transform already returns a batched tensor of shape (1, 3, H, W),
+    input_batch = transform(img_rgb)  #shape: (1, 3, H, W)
     
     # Move input to GPU
     input_batch = input_batch.to(device) #GPU if available
