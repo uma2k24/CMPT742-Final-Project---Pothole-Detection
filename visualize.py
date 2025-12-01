@@ -120,14 +120,53 @@ def draw_results(frame_bgr, results, depth_map=None, show_depth=False):
         depth_color = cv2.resize(depth_color, (w1, h1))
 
     # 4. Put a label on the depth image
+    # ----- COLOR CODE BY SEVERITY -----
+    severity = res.get("severity", "unknown")
+    conf = res.get("score", 0.0)
+    depth_score = res.get("depth_score", 0.0)
+    max_depth_cm = res.get("max_depth_cm", 0.0)
+
+    # Choose color: (B, G, R)
+    if severity == "shallow":
+        color = (0, 255, 0)       # green
+    elif severity == "moderate":
+        color = (0, 255, 255)     # yellow
+    elif severity == "severe":
+        color = (0, 0, 255)       # red
+    else:
+        color = (255, 255, 255)   # white fallback
+
+    # Build the label string
+    text = (
+        f"{severity} | "
+        f"Conf:{conf:.2f} | "
+        f"Depth:{depth_score:.2f} | "
+        f"~{max_depth_cm:.1f}cm"
+    )
+
+    # Text placement
+    text_x = xmin
+    text_y = max(0, ymin - 5)
+
+    # Draw shaded rectangle for readability
+    (text_w, text_h), _ = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1)
+    cv2.rectangle(
+        vis,
+        (text_x, text_y - text_h - 4),
+        (text_x + text_w + 4, text_y + 4),
+        color,
+        -1
+    )
+
+    # Draw the text
     cv2.putText(
-        depth_color,
-        "Depth map",
-        (10, 25),
+        vis,
+        text,
+        (text_x + 2, text_y),
         cv2.FONT_HERSHEY_SIMPLEX,
-        0.8,
-        (255, 255, 255),
-        2,
+        0.5,
+        (0, 0, 0),       # black text
+        1,
         cv2.LINE_AA
     )
 

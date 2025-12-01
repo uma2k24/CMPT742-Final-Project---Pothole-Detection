@@ -50,6 +50,19 @@ def classify_severity(max_depth_cm: float) -> str:
         return "severe"
 
 
+def depth_score_from_cm(max_depth_cm: float, max_cm: float = 10.0) -> float:
+    """
+    Convert max depth (in cm) into a normalized depth 'severity' score in [0, 1].
+
+    0 cm -> 0.0   (no depth)
+    max_cm cm or more -> 1.0   (very deep)
+    linear in between
+    """
+    score = max_depth_cm / max_cm
+    score = max(0.0, min(score, 1.0))
+    return score
+
+
 # --------- Main loop ---------
 
 while True:
@@ -102,6 +115,9 @@ while True:
                 max_depth_cm = depth_metrics.get("max_depth_cm", 0.0)
                 mean_depth_cm = depth_metrics.get("mean_depth_cm", 0.0)
 
+                # NEW: compute depth score in [0, 1]
+                depth_score = depth_score_from_cm(max_depth_cm)
+
                 # Decide severity based on max_depth_cm
                 severity = classify_severity(max_depth_cm)
 
@@ -117,6 +133,7 @@ while True:
                 det = {
                     "bbox": (x1, y1, x2, y2),
                     "score": float(conf),
+                    "depth_score": float(depth_score),
                     "max_rel": float(max_rel),
                     "mean_rel": float(mean_rel),
                     "severity": severity,
