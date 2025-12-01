@@ -8,11 +8,11 @@ video_path = r"c:/Users/amand/Desktop/CMPT 742/Project Potholes/CMPT742-Final-Pr
 cap = cv2.VideoCapture(video_path)
 
 if not cap.isOpened():
-    print("❌ Could not open video:", video_path)
+    print("Could not open video:", video_path)
     exit()
 
 # Load YOLO model with custom weights
-model = YOLO(r"c:/Users/amand/Desktop/CMPT 742/Project Potholes/CMPT742-Final-Project---Pothole-Detection/runs/detect/train12/weights/best.pt")
+model = YOLO(r"C:/Users/amand/Desktop/CMPT 742/Project Potholes/CMPT742-Final-Project---Pothole-Detection/runs\detect/train14/weights/best.pt")
 
 # Define class names
 classNames = ['Pothole']
@@ -20,9 +20,9 @@ classNames = ['Pothole']
 while True:
     success, img = cap.read()
 
-    # 🔴 If we didn't get a frame, stop the loop (end of video or error)
+    # If  didn't get a frame, stop the loop (end of video or error)
     if not success or img is None:
-        print("🔵 No more frames or failed to read frame. Exiting.")
+        print("No more frames or failed to read frame. Exiting.")
         break
 
     # Run YOLO on this frame
