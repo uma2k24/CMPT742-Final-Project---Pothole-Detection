@@ -13,17 +13,19 @@ from ultralytics import YOLO
 from depth_model import predict_depth
 from depth_utils import estimate_pothole_depth_relative
 
-# NEW: import the visualization helper
+#Import visualization
 from visualize import draw_results   # make sure visualize.py is in the same folder
 
 # --------- Configuration ---------
 
 # Input video
-video_path = "CMPT742-Final-Project---Pothole-Detection/Media/Potholes.mp4"
+video_path = "Media/Potholes.mp4"
 cap = cv2.VideoCapture(video_path)
 
 # YOLO model with custom weights
-model = YOLO("Weights/best.pt")
+model = YOLO(
+    r"c:/Users/amand/Desktop/CMPT 742/Project Potholes/CMPT742-Final-Project---Pothole-Detection/runs/detect/train14/weights/best.pt"
+)
 
 # Single class for this project
 classNames = ["Pothole"]
@@ -37,27 +39,30 @@ SHOW_DEPTH = True
 
 def classify_severity(max_depth_cm: float) -> str:
     """
-    Simple heuristic to map estimated max depth (cm) to severity label.
-    You can tweak these thresholds however you like.
+    Classify map estimated max depth (cm) to severity label.
+    The thresholds are arbitrary and can be adjusted.
     """
     if max_depth_cm < 2.0:
-        return "shallow"
+        return "shallow" # green
     elif max_depth_cm < 5.0:
-        return "moderate"
+        return "moderate" #yellow
     else:
-        return "severe"
+        return "severe" #red
 
 
 def depth_score_from_cm(max_depth_cm: float, max_cm: float = 10.0) -> float:
     """
     Convert max depth (in cm) into a normalized depth 'severity' score in [0, 1].
 
-    0 cm -> 0.0   (no depth)
-    max_cm cm or more -> 1.0   (very deep)
-    linear in between
+        0 cm -> 0.0   (no depth)
+        max_cm cm or more -> 1.0   (very deep)
+        
+        linear in between
     """
     score = max_depth_cm / max_cm
-    score = max(0.0, min(score, 1.0))
+    score = max(0.0, min(score, 1.0)) #new score for depth severity
+
+
     return score
 
 
@@ -106,13 +111,12 @@ while True:
                 mean_rel = depth_metrics["mean_rel"]
                 road_depth = depth_metrics["road_depth"]
 
-                # Build label text
-                label = f"{classNames[cls]} {conf:.2f}"
+                # Debug print if you want to monitor relative values
+                print(f"max_rel = {max_rel:.6f}, mean_rel = {mean_rel:.6f}")
 
-                # Only append depth if we successfully estimated road_depth
-                if road_depth is not None:
-                    # Note: units are relative MiDaS units, not meters
-                    label += f" d={max_rel:.2f}"
+                # NEW: metric depths (cm) from depth_utils.py
+                max_depth_cm = depth_metrics.get("max_depth_cm", 0.0)
+                mean_depth_cm = depth_metrics.get("mean_depth_cm", 0.0)
 
                 # NEW: compute depth score in [0, 1]
                 depth_score = depth_score_from_cm(max_depth_cm)
@@ -136,7 +140,7 @@ while True:
                     "max_rel": float(max_rel),
                     "mean_rel": float(mean_rel),
                     "severity": severity,
-                    # optional extra fields if you want later:
+                    # optional extra fields
                     "max_depth_cm": float(max_depth_cm),
                     "mean_depth_cm": float(mean_depth_cm),
                     "class_name": classNames[cls],
@@ -146,7 +150,7 @@ while True:
 
     # ---- Visualization step: draw boxes + depth map ----
 
-    # draw_results will:
+    # draw_results is from visualize.py
     #  - draw the bounding boxes and labels on a copy of img
     #  - if show_depth=True and depth_map is provided,
     #    create a side-by-side image: [RGB | depth]
@@ -159,7 +163,6 @@ while True:
 
     cv2.imshow("Pothole Detection + Depth", vis_img)
 
-    cv2.imshow("Image", img)
     if cv2.waitKey(1) & 0xFF == ord("q"):
         break
 
