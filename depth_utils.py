@@ -24,10 +24,10 @@
 
 import numpy as np
 
-# --- metric depth calibration constants (ADDED) ---
+#Metric depth calibration constants
 # These constants convert relative MiDaS depth into approximate real-world centimeters.
 # You MUST tune alpha_cm_per_unit using real calibration images.
-alpha_cm_per_unit = 0.005   # placeholder; adjust after calibration
+alpha_cm_per_unit = 0.005   # placeholder; adjust after calibration/ real measurements of potholes
 beta_cm_offset = 0.0        # usually 0 is fine
 
 
@@ -112,7 +112,7 @@ def estimate_road_reference_depth(road_context):
     return road_depth
 
 
-# --- convert relative MiDaS difference -> centimeters (ADDED) ---
+#Convert relative MiDaS difference -> centimeters 
 def rel_to_cm(rel_value):
     if rel_value <= 0:
         return 0.0
