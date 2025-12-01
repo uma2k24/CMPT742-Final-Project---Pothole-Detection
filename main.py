@@ -48,6 +48,19 @@ def classify_severity(max_depth_cm: float) -> str:
         return "severe"
 
 
+def depth_score_from_cm(max_depth_cm: float, max_cm: float = 10.0) -> float:
+    """
+    Convert max depth (in cm) into a normalized depth 'severity' score in [0, 1].
+
+    0 cm -> 0.0   (no depth)
+    max_cm cm or more -> 1.0   (very deep)
+    linear in between
+    """
+    score = max_depth_cm / max_cm
+    score = max(0.0, min(score, 1.0))
+    return score
+
+
 # --------- Main loop ---------
 
 while True:
@@ -101,15 +114,50 @@ while True:
                     # Note: units are relative MiDaS units, not meters
                     label += f" d={max_rel:.2f}"
 
-                # Draw bbox and label
-                cvzone.cornerRect(img, (x1, y1, w, h), t=2)
-                cvzone.putTextRect(
-                    img,
-                    label,
-                    (max(0, x1), max(35, y1)),
-                    scale=1,
-                    thickness=1,
-                )
+                # NEW: compute depth score in [0, 1]
+                depth_score = depth_score_from_cm(max_depth_cm)
+
+                # Decide severity based on max_depth_cm
+                severity = classify_severity(max_depth_cm)
+
+                # Build detection record for visualization helper
+                # visualize.draw_results expects:
+                #   {
+                #     "bbox": (xmin, ymin, xmax, ymax),
+                #     "score": float,
+                #     "max_rel": float,
+                #     "mean_rel": float,
+                #     "severity": str
+                #   }
+                det = {
+                    "bbox": (x1, y1, x2, y2),
+                    "score": float(conf),
+                    "depth_score": float(depth_score),
+                    "max_rel": float(max_rel),
+                    "mean_rel": float(mean_rel),
+                    "severity": severity,
+                    # optional extra fields if you want later:
+                    "max_depth_cm": float(max_depth_cm),
+                    "mean_depth_cm": float(mean_depth_cm),
+                    "class_name": classNames[cls],
+                }
+
+                frame_results.append(det)
+
+    # ---- Visualization step: draw boxes + depth map ----
+
+    # draw_results will:
+    #  - draw the bounding boxes and labels on a copy of img
+    #  - if show_depth=True and depth_map is provided,
+    #    create a side-by-side image: [RGB | depth]
+    vis_img = draw_results(
+        frame_bgr=img,
+        results=frame_results,
+        depth_map=depth_map,
+        show_depth=SHOW_DEPTH,
+    )
+
+    cv2.imshow("Pothole Detection + Depth", vis_img)
 
     cv2.imshow("Image", img)
     if cv2.waitKey(1) & 0xFF == ord("q"):
